@@ -44,6 +44,6 @@ unsigned char vp_buffer_get_byte(VPBuffer *buf);
 
 uint32_t vp_buffer_get_uint32(VPBuffer *buf);
 
-bool vp_buffer_get_byte_arr(VPBuffer *buf, void *data, size_t data_len);
+unsigned char *vp_buffer_get_byte_arr(VPBuffer *buf, size_t *len_ret);
 
 #endif /* not VP_BUFFER_H */

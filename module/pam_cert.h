@@ -20,6 +20,8 @@
 #include <security/pam_modules.h>
 #include <security/pam_appl.h>
 
+#include <ed25519.h>
+
 #include "vp_getput.h"
 #include "vp_buffer.h"
 

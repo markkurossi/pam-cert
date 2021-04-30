@@ -172,16 +172,18 @@ vp_buffer_get_uint32(VPBuffer *buf)
   return VP_GET_UINT32(ucp);
 }
 
-bool
-vp_buffer_get_byte_arr(VPBuffer *buf, void *data, size_t data_len)
+unsigned char *
+vp_buffer_get_byte_arr(VPBuffer *buf, size_t *len_ret)
 {
   unsigned char *ucp;
   size_t len;
 
+  *len_ret = 0;
+
   if (buf->offset + 4 > buf->used)
     {
       buf->error = true;
-      return 0;
+      return NULL;
     }
   ucp = buf->data + buf->offset;
   buf->offset += 4;
@@ -193,16 +195,12 @@ vp_buffer_get_byte_arr(VPBuffer *buf, void *data, size_t data_len)
     {
       buf->error = true;
       buf->offset = buf->used;
-      return false;
+      return NULL;
     }
-  if (len > data_len)
-    {
-      buf->error = true;
-      buf->offset += len;
-      return false;
-    }
-  memcpy(data, ucp, len);
+
   buf->offset += len;
 
-  return true;
+  *len_ret = len;
+
+  return ucp;
 }
