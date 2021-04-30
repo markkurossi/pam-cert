@@ -12,6 +12,9 @@ module/pam_cert.so: $(filter %.c,$(SRCS))
 cmd/pam-test/pam-test: cmd/pam-test/pam-test.c
 	cc -Wall -Werror -o $@ $+ -lpam -lpam_misc
 
+check:
+	@echo check
+
 clean:
 	$(RM) module/pam_cert.so
 	$(RM) cmd/pam-test/pam-test
