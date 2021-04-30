@@ -8,8 +8,43 @@
 
 #include "pam_cert.h"
 
+char *
+make_challenge()
+{
+  VPBuffer buf;
+  char hostname[256];
+  int ret;
+  unsigned char *ucp;
+  size_t len;
+  unsigned char *challenge;
+  size_t challenge_len;
+
+  vp_buffer_init(&buf);
+
+  ret = gethostname(hostname, sizeof(hostname));
+  if (ret != 0)
+    return NULL;
+
+  vp_buffer_add_data(&buf, (unsigned char *) hostname, strlen(hostname));
+  vp_buffer_add_uint32(&buf, time(NULL));
+
+  ucp = vp_buffer_ptr(&buf);
+  if (ucp == NULL)
+    {
+      vp_buffer_uninit(&buf);
+      return NULL;
+    }
+  len = vp_buffer_len(&buf);
+
+  challenge = base64_encode(ucp, len, &challenge_len);
+
+  vp_buffer_uninit(&buf);
+
+  return (char *) challenge;
+}
+
 int
-ask(pam_handle_t *pamh, const char *question, char **response_ret)
+ask(pam_handle_t *pamh, char *question, char **response_ret)
 {
   struct pam_conv *conv;
   struct pam_message msg;
@@ -52,17 +87,24 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags,int argc, const char **argv)
 {
   int retval;
   const char *username;
+  char *challenge;
   char *answer = NULL;
+  char buf[4096];
 
   retval = pam_get_user(pamh, &username, NULL);
   if (retval != PAM_SUCCESS)
     return retval;
 
-  retval = ask(pamh, "Certificate for 42: ", &answer);
+  challenge = make_challenge();
+  if (challenge == NULL)
+    return PAM_AUTH_ERR;
+
+  snprintf(buf, sizeof(buf), "Challenge  : %sCertificate: ", challenge);
+
+  retval = ask(pamh, buf, &answer);
   if (retval != PAM_SUCCESS)
     return retval;
 
-  printf("Got: %s\n", answer);
   if (strcmp(answer, "no") == 0)
     {
       printf("Invalid certificate\n");
