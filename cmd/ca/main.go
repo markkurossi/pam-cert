@@ -17,9 +17,11 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/user"
 	"time"
 )
 
+// Challenge implements login challenge from the PAM module.
 type Challenge struct {
 	Username string
 	Hostname string
@@ -32,13 +34,16 @@ func (c Challenge) String() string {
 		c.Username, c.Hostname)
 }
 
+// Token implements authentication token.
 type Token struct {
+	FromUser string
 	Username string
 	Hostname string
 	SignTime uint32
 	HostTime uint32
 }
 
+// Certificate implements signed authentication token.
 type Certificate struct {
 	Token     []byte
 	Signature []byte
@@ -95,7 +100,13 @@ Supported options are:
 				log.Fatalf("failed to load private key: %s", err)
 			}
 
+			user, err := user.Current()
+			if err != nil {
+				log.Fatalf("failed to get current user: %s", err)
+			}
+
 			token := Token{
+				FromUser: user.Username,
 				Username: decoded.Username,
 				Hostname: decoded.Hostname,
 				SignTime: uint32(time.Now().Unix()),

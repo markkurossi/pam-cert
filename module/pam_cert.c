@@ -8,6 +8,16 @@
 
 #include "pam_cert.h"
 
+static char *
+format_time(time_t time, char *buf, size_t buflen)
+{
+  struct tm tm;
+
+  strftime(buf, buflen, "%FT%T%z", gmtime_r(&time, &tm));
+
+  return buf;
+}
+
 char *
 make_challenge(const char *username)
 {
@@ -18,6 +28,8 @@ make_challenge(const char *username)
   size_t len;
   unsigned char *challenge;
   size_t challenge_len;
+  time_t now = time(NULL);
+  char timestamp[256];
 
   vp_buffer_init(&buf);
 
@@ -27,7 +39,7 @@ make_challenge(const char *username)
 
   vp_buffer_add_byte_arr(&buf, username, strlen(username));
   vp_buffer_add_byte_arr(&buf, hostname, strlen(hostname));
-  vp_buffer_add_uint32(&buf, time(NULL));
+  vp_buffer_add_uint32(&buf, now);
 
   ucp = vp_buffer_ptr(&buf);
   if (ucp == NULL)
@@ -40,6 +52,9 @@ make_challenge(const char *username)
   challenge = base64_encode(ucp, len, &challenge_len);
 
   vp_buffer_uninit(&buf);
+
+ printf("Username   : %s\nHostname   : %s\nTime       : %s\n",
+        username, hostname, format_time(now, timestamp, sizeof(timestamp)));
 
   return (char *) challenge;
 }
@@ -140,20 +155,21 @@ static bool
 verify_token(unsigned char *token, size_t token_len, const char *pam_username)
 {
   VPBuffer buf;
+  unsigned char *fromuser;
+  size_t fromuser_len;
   unsigned char *username;
   size_t username_len;
   unsigned char *hostname;
   size_t hostname_len;
   uint32_t sign_time, host_time;
-  struct tm tm;
   char timestamp[256];
-  time_t now;
 
   vp_buffer_init(&buf);
 
   if (!vp_buffer_add_data(&buf, token, token_len))
     goto error;
 
+  fromuser = vp_buffer_get_byte_arr(&buf, &fromuser_len);
   username = vp_buffer_get_byte_arr(&buf, &username_len);
   hostname = vp_buffer_get_byte_arr(&buf, &hostname_len);
   sign_time = vp_buffer_get_uint32(&buf);
@@ -162,12 +178,9 @@ verify_token(unsigned char *token, size_t token_len, const char *pam_username)
   if (vp_buffer_error(&buf))
     goto error;
 
-  now = (time_t) sign_time;
-
-  strftime(timestamp, sizeof(timestamp), "%FT%T%z", gmtime_r(&now, &tm));
-
-  printf("token: %s %.*s@%.*s\n",
-         timestamp,
+  printf("token      : %s %.*s => %.*s@%.*s\n",
+         format_time((time_t) host_time, timestamp, sizeof(timestamp)),
+         (int) fromuser_len, fromuser,
          (int) username_len, username,
          (int) hostname_len, hostname);
 
