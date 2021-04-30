@@ -18,7 +18,7 @@ format_time(time_t time, char *buf, size_t buflen)
   return buf;
 }
 
-char *
+static char *
 make_challenge(const char *username)
 {
   VPBuffer buf;
@@ -59,7 +59,7 @@ make_challenge(const char *username)
   return (char *) challenge;
 }
 
-int
+static int
 ask(pam_handle_t *pamh, char *question, char **response_ret)
 {
   struct pam_conv *conv;
@@ -210,7 +210,7 @@ verify_token(unsigned char *token, size_t token_len, const char *pam_username)
   return false;
 }
 
-bool
+static bool
 verify_cert(unsigned char *cert, size_t cert_len, unsigned char *pub,
             const char *username)
 {
@@ -262,7 +262,7 @@ verify_cert(unsigned char *cert, size_t cert_len, unsigned char *pub,
   return true;
 }
 
-unsigned char *
+static unsigned char *
 load_public_key()
 {
   FILE *fp;
