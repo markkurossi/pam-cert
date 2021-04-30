@@ -8,3 +8,6 @@
 *.dylib
 
 cmd/pam-test/pam-test
+cmd/ca/ca
+cmd/ca/*.pub
+cmd/ca/*.priv

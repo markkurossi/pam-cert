@@ -140,7 +140,6 @@ static bool
 verify_token(unsigned char *token, size_t token_len, const char *pam_username)
 {
   VPBuffer buf;
-  unsigned char *ucp;
   unsigned char *username;
   size_t username_len;
   unsigned char *hostname;
@@ -152,10 +151,8 @@ verify_token(unsigned char *token, size_t token_len, const char *pam_username)
 
   vp_buffer_init(&buf);
 
-  ucp = vp_buffer_add_space(&buf, token_len);
-  if (ucp == NULL)
+  if (!vp_buffer_add_data(&buf, token, token_len))
     goto error;
-  memcpy(ucp, token, token_len);
 
   username = vp_buffer_get_byte_arr(&buf, &username_len);
   hostname = vp_buffer_get_byte_arr(&buf, &hostname_len);
@@ -205,7 +202,6 @@ verify_cert(unsigned char *cert, size_t cert_len, unsigned char *pub,
             const char *username)
 {
   VPBuffer buf;
-  unsigned char *ucp;
   unsigned char *token;
   size_t token_len;
   unsigned char *signature;
@@ -213,13 +209,11 @@ verify_cert(unsigned char *cert, size_t cert_len, unsigned char *pub,
 
   vp_buffer_init(&buf);
 
-  ucp = vp_buffer_add_space(&buf, cert_len);
-  if (ucp == NULL)
+  if (!vp_buffer_add_data(&buf, cert, cert_len))
     {
       vp_buffer_uninit(&buf);
       return false;
     }
-  memcpy(ucp, cert, cert_len);
 
   token = vp_buffer_get_byte_arr(&buf, &token_len);
   signature = vp_buffer_get_byte_arr(&buf, &signature_len);
